@@ -81,6 +81,7 @@ namespace OpenXmlPowerTools.Tests
         [InlineData("HC049-Borders.docx")]
         [InlineData("HC050-Shaded-Text-01.docx")]
         [InlineData("HC051-Shaded-Text-02.docx")]
+        [InlineData("test_doc_with_anchor_links.docx")]
         public void HC001_HtmlConverter(string name)
         {
             FileInfo sourceDocx = new FileInfo(Path.Combine(TestUtil.SourceDir.FullName, name));

@@ -28,3 +28,4 @@
 # NuGet Packages
 *.nupkg
 **/packages/*
+.vs/
