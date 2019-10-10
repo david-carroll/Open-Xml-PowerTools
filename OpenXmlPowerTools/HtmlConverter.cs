@@ -49,7 +49,12 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml.Linq;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Drawing;
 using DocumentFormat.OpenXml.Packaging;
+using Font = System.Drawing.Font;
+using FontFamily = System.Drawing.FontFamily;
+using Hyperlink = DocumentFormat.OpenXml.Wordprocessing.Hyperlink;
 
 // 200e lrm - LTR
 // 200f rlm - RTL
@@ -388,17 +393,31 @@ namespace OpenXmlPowerTools
             // Transform hyperlinks to the XHTML h:a element.
             if (element.Name == W.hyperlink && element.Attribute(R.id) != null)
             {
-                try
-                {
-                    return new XElement(Xhtml.a,
-                        new XAttribute("href",
-                            wordDoc.MainDocumentPart
-                                .HyperlinkRelationships
-                                .First(x => x.Id == (string)element.Attribute(R.id))
-                                .Uri
-                            ),
-                        element.Elements(W.r).Select(run => ConvertRun(wordDoc, settings, run))
-                        );
+                try {
+                    var searchId = element.Attribute(R.id)?.Value;
+
+                    var linkRel = wordDoc.MainDocumentPart
+                      .HyperlinkRelationships
+                      .FirstOrDefault(x => !string.IsNullOrWhiteSpace(searchId) && x.Id == searchId);
+              
+                    var anchor = element.Attribute(W.anchor);
+
+                    var href = linkRel?.Uri?.OriginalString + 
+                               (!string.IsNullOrWhiteSpace(anchor?.Value)
+                                  ? $"#{anchor.Value}"
+                                  : string.Empty);
+
+                    href = href.StartsWith("//") ? $"{Uri.UriSchemeFile}:{href}" : href;
+
+                    var uri = string.IsNullOrWhiteSpace(href) ? linkRel?.Uri?.OriginalString : href;
+
+                    return string.IsNullOrWhiteSpace(uri) 
+                      ? null 
+                      : new XElement(Xhtml.a,
+                                     new XAttribute("href", uri),
+                                     element.Elements(W.r)
+                                            .Select(run => ConvertRun(wordDoc, settings, run))
+                    );
                 }
                 catch (UriFormatException)
                 {
